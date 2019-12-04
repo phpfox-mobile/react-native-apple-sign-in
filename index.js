@@ -23,4 +23,7 @@ export const SignInWithAppleButton = (buttonStyle, callBack) => {
   }
 }
 
-export default AppleSignIn
+export default {
+  request: AppleSignIn.requestAsync,
+  getCredentialState: AppleSignIn.getCredentialStateAsync,
+}
