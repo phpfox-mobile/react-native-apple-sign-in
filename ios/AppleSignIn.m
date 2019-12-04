@@ -50,35 +50,43 @@ RCT_EXPORT_METHOD(requestAsync:(NSDictionary *)options
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
-    _promiseResolve = resolve;
-    _promiseReject = reject;
-    
-    ASAuthorizationAppleIDProvider* appleIDProvider = [[ASAuthorizationAppleIDProvider alloc] init];
-    ASAuthorizationAppleIDRequest* request = [appleIDProvider createRequest];
-    request.requestedScopes = options[@"requestedScopes"];
-    if (options[@"requestedOperation"]) {
-        request.requestedOperation = options[@"requestedOperation"];
+    if (@available(iOS 13.0, *)) {
+        _promiseResolve = resolve;
+        _promiseReject = reject;
+        
+        ASAuthorizationAppleIDProvider* appleIDProvider = [[ASAuthorizationAppleIDProvider alloc] init];
+        ASAuthorizationAppleIDRequest* request = [appleIDProvider createRequest];
+        request.requestedScopes = options[@"requestedScopes"];
+        if (options[@"requestedOperation"]) {
+            request.requestedOperation = options[@"requestedOperation"];
+        }
+        
+        ASAuthorizationController* ctrl = [[ASAuthorizationController alloc] initWithAuthorizationRequests:@[request]];
+        ctrl.presentationContextProvider = self;
+        ctrl.delegate = self;
+        [ctrl performRequests];
+    } else {
+      reject(@"ERR_APPLE_AUTHENTICATION_UNAVAILABLE", @"Apple authentication is not supported on this device.", nil);
     }
-    
-    ASAuthorizationController* ctrl = [[ASAuthorizationController alloc] initWithAuthorizationRequests:@[request]];
-    ctrl.presentationContextProvider = self;
-    ctrl.delegate = self;
-    [ctrl performRequests];
 }
 
 RCT_EXPORT_METHOD(getCredentialStateAsync:(NSString *)userID
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
-    ASAuthorizationAppleIDProvider *appleIDProvider = [[ASAuthorizationAppleIDProvider alloc] init];
-    [appleIDProvider getCredentialStateForUserID:userID
-                                      completion:^(ASAuthorizationAppleIDProviderCredentialState credentialState,
-                                                   NSError  *_Nullable error) {
-      if (error) {
-        return reject(@"ERR_APPLE_AUTHENTICATION_CREDENTIAL", error.localizedDescription, RCTNullIfNil(error));
-      }
-      resolve([self exportCredentialState:credentialState]);
-    }];
+    if (@available(iOS 13.0, *)) {
+        ASAuthorizationAppleIDProvider *appleIDProvider = [[ASAuthorizationAppleIDProvider alloc] init];
+        [appleIDProvider getCredentialStateForUserID:userID
+                                          completion:^(ASAuthorizationAppleIDProviderCredentialState credentialState,
+                                                       NSError  *_Nullable error) {
+            if (error) {
+                return reject(@"ERR_APPLE_AUTHENTICATION_CREDENTIAL", error.localizedDescription, RCTNullIfNil(error));
+            }
+            resolve([self exportCredentialState:credentialState]);
+        }];
+    } else {
+      reject(@"ERR_APPLE_AUTHENTICATION_UNAVAILABLE", @"Apple authentication is not supported on this device.", nil);
+    }
 }
 
 
@@ -91,14 +99,14 @@ RCT_EXPORT_METHOD(getCredentialStateAsync:(NSString *)userID
    didCompleteWithAuthorization:(ASAuthorization *)authorization {
     ASAuthorizationAppleIDCredential * credential = authorization.credential;
     
-//    RCTLog(@"APPLE_identityToken: %@", credential.identityToken);
-//    RCTLog(@"APPLE_authorizationCode: %@", credential.authorizationCode);
-//    RCTLog(@"APPLE_state: %@", credential.state);
-//    RCTLog(@"APPLE_user: %@", credential.user);
-//    RCTLog(@"APPLE_authorizedScopes: %@", credential.authorizedScopes);
-//    RCTLog(@"APPLE_fullName: %@", credential.fullName);
-//    RCTLog(@"APPLE_email: %@", credential.email);
-//    RCTLog(@"APPLE_realUserStatus: %ld", (long)credential.realUserStatus);
+    //    RCTLog(@"APPLE_identityToken: %@", credential.identityToken);
+    //    RCTLog(@"APPLE_authorizationCode: %@", credential.authorizationCode);
+    //    RCTLog(@"APPLE_state: %@", credential.state);
+    //    RCTLog(@"APPLE_user: %@", credential.user);
+    //    RCTLog(@"APPLE_authorizedScopes: %@", credential.authorizedScopes);
+    //    RCTLog(@"APPLE_fullName: %@", credential.fullName);
+    //    RCTLog(@"APPLE_email: %@", credential.email);
+    //    RCTLog(@"APPLE_realUserStatus: %ld", (long)credential.realUserStatus);
     
     NSDictionary * result = @{
         @"identityToken": RCTNullIfNil([self exportData:credential.identityToken]),
@@ -121,16 +129,16 @@ RCT_EXPORT_METHOD(getCredentialStateAsync:(NSString *)userID
 }
 
 - (NSString *)exportCredentialState:(ASAuthorizationAppleIDProviderCredentialState)credentialState{
-  switch (credentialState) {
-    case ASAuthorizationAppleIDProviderCredentialRevoked:
-      return @"REVOKED";
-    case ASAuthorizationAppleIDProviderCredentialAuthorized:
-      return @"AUTHORIZED";
-    case ASAuthorizationAppleIDProviderCredentialNotFound:
-      return @"NOT_FOUND";
-    case ASAuthorizationAppleIDProviderCredentialTransferred:
-      return @"TRANSFERRED";
-  }
+    switch (credentialState) {
+        case ASAuthorizationAppleIDProviderCredentialRevoked:
+            return @"REVOKED";
+        case ASAuthorizationAppleIDProviderCredentialAuthorized:
+            return @"AUTHORIZED";
+        case ASAuthorizationAppleIDProviderCredentialNotFound:
+            return @"NOT_FOUND";
+        case ASAuthorizationAppleIDProviderCredentialTransferred:
+            return @"TRANSFERRED";
+    }
 }
 
 - (NSString *)exportRealUserStatus:(ASUserDetectionStatus) detectionStatus {
