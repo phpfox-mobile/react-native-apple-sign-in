@@ -23,6 +23,11 @@ export const SignInWithAppleButton = (buttonStyle, callBack) => {
   }
 }
 
+export const Scope = {
+  FULL_NAME: AppleSignIn.Scope.FULL_NAME,
+  EMAIL: AppleSignIn.Scope.EMAIL
+}
+
 export default {
   request: AppleSignIn.requestAsync,
   getCredentialState: AppleSignIn.getCredentialStateAsync,
