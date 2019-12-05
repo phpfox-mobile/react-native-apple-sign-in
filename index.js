@@ -1,5 +1,5 @@
 import React from 'react'
-import { NativeModules, requireNativeComponent, Platform , Platform } from 'react-native'
+import { NativeModules, requireNativeComponent, Platform } from 'react-native'
 
 const { AppleSignIn } = NativeModules
 
