@@ -13,30 +13,34 @@ RCT_EXPORT_MODULE()
 
 -(NSDictionary *)constantsToExport
 {
-    NSDictionary* scopes = @{@"FULL_NAME": ASAuthorizationScopeFullName, @"EMAIL": ASAuthorizationScopeEmail};
-    NSDictionary* operations = @{
-        @"LOGIN": ASAuthorizationOperationLogin,
-        @"REFRESH": ASAuthorizationOperationRefresh,
-        @"LOGOUT": ASAuthorizationOperationLogout,
-        @"IMPLICIT": ASAuthorizationOperationImplicit
-    };
-    NSDictionary* credentialStates = @{
-        @"AUTHORIZED": @(ASAuthorizationAppleIDProviderCredentialAuthorized),
-        @"REVOKED": @(ASAuthorizationAppleIDProviderCredentialRevoked),
-        @"NOT_FOUND": @(ASAuthorizationAppleIDProviderCredentialNotFound),
-    };
-    NSDictionary* userDetectionStatuses = @{
-        @"LIKELY_REAL": @(ASUserDetectionStatusLikelyReal),
-        @"UNKNOWN": @(ASUserDetectionStatusUnknown),
-        @"UNSUPPORTED": @(ASUserDetectionStatusUnsupported),
-    };
-    
-    return @{
-        @"Scope": scopes,
-        @"Operation": operations,
-        @"CredentialState": credentialStates,
-        @"UserDetectionStatus": userDetectionStatuses
-    };
+    if (@available(iOS 13.0, *)) {
+        NSDictionary* scopes = @{@"FULL_NAME": ASAuthorizationScopeFullName, @"EMAIL": ASAuthorizationScopeEmail};
+        NSDictionary* operations = @{
+            @"LOGIN": ASAuthorizationOperationLogin,
+            @"REFRESH": ASAuthorizationOperationRefresh,
+            @"LOGOUT": ASAuthorizationOperationLogout,
+            @"IMPLICIT": ASAuthorizationOperationImplicit
+        };
+        NSDictionary* credentialStates = @{
+            @"AUTHORIZED": @(ASAuthorizationAppleIDProviderCredentialAuthorized),
+            @"REVOKED": @(ASAuthorizationAppleIDProviderCredentialRevoked),
+            @"NOT_FOUND": @(ASAuthorizationAppleIDProviderCredentialNotFound),
+        };
+        NSDictionary* userDetectionStatuses = @{
+            @"LIKELY_REAL": @(ASUserDetectionStatusLikelyReal),
+            @"UNKNOWN": @(ASUserDetectionStatusUnknown),
+            @"UNSUPPORTED": @(ASUserDetectionStatusUnsupported),
+        };
+
+        return @{
+            @"Scope": scopes,
+            @"Operation": operations,
+            @"CredentialState": credentialStates,
+            @"UserDetectionStatus": userDetectionStatuses
+        };
+    }
+
+    return @{};
 }
 
 
@@ -53,19 +57,19 @@ RCT_EXPORT_METHOD(requestAsync:(NSDictionary *)options
     if (@available(iOS 13.0, *)) {
         _promiseResolve = resolve;
         _promiseReject = reject;
-        
+
         ASAuthorizationAppleIDProvider* appleIDProvider = [[ASAuthorizationAppleIDProvider alloc] init];
         ASAuthorizationAppleIDRequest* request = [appleIDProvider createRequest];
         request.requestedScopes = options[@"requestedScopes"];
-        
+
         if (options[@"requestedOperation"]) {
             request.requestedOperation = options[@"requestedOperation"];
         }
-        
+
         if (options[@"state"]) {
             request.state = options[@"state"];
         }
-        
+
         ASAuthorizationController* ctrl = [[ASAuthorizationController alloc] initWithAuthorizationRequests:@[request]];
         ctrl.presentationContextProvider = self;
         ctrl.delegate = self;
@@ -95,15 +99,15 @@ RCT_EXPORT_METHOD(getCredentialStateAsync:(NSString *)userID
 }
 
 
-- (ASPresentationAnchor)presentationAnchorForAuthorizationController:(ASAuthorizationController *)controller {
+- (ASPresentationAnchor)presentationAnchorForAuthorizationController:(ASAuthorizationController *)controller API_AVAILABLE(ios(13.0)){
     return RCTKeyWindow();
 }
 
 
 - (void)authorizationController:(ASAuthorizationController *)controller
-   didCompleteWithAuthorization:(ASAuthorization *)authorization {
+   didCompleteWithAuthorization:(ASAuthorization *)authorization API_AVAILABLE(ios(13.0)){
     ASAuthorizationAppleIDCredential * credential = authorization.credential;
-    
+
     //    RCTLog(@"APPLE_identityToken: %@", credential.identityToken);
     //    RCTLog(@"APPLE_authorizationCode: %@", credential.authorizationCode);
     //    RCTLog(@"APPLE_state: %@", credential.state);
@@ -112,7 +116,7 @@ RCT_EXPORT_METHOD(getCredentialStateAsync:(NSString *)userID
     //    RCTLog(@"APPLE_fullName: %@", credential.fullName);
     //    RCTLog(@"APPLE_email: %@", credential.email);
     //    RCTLog(@"APPLE_realUserStatus: %ld", (long)credential.realUserStatus);
-    
+
     NSDictionary * result = @{
         @"identityToken": RCTNullIfNil([self exportData:credential.identityToken]),
         @"authorizationCode": RCTNullIfNil([self exportData:credential.authorizationCode]),
@@ -123,17 +127,17 @@ RCT_EXPORT_METHOD(getCredentialStateAsync:(NSString *)userID
         @"email": RCTNullIfNil(credential.email),
         @"realUserStatus": [self exportRealUserStatus:credential.realUserStatus]
     };
-    
+
     _promiseResolve(result);
 }
 
 
 - (void)authorizationController:(ASAuthorizationController *)controller
-           didCompleteWithError:(NSError *)error {
+           didCompleteWithError:(NSError *)error API_AVAILABLE(ios(13.0)){
     _promiseReject(@"ERR_APPLE_AUTHENTICATION_REQUEST", error.localizedDescription, RCTNullIfNil(error));
 }
 
-- (NSString *)exportCredentialState:(ASAuthorizationAppleIDProviderCredentialState)credentialState{
+- (NSString *)exportCredentialState:(ASAuthorizationAppleIDProviderCredentialState)credentialState API_AVAILABLE(ios(13.0)){
     switch (credentialState) {
         case ASAuthorizationAppleIDProviderCredentialRevoked:
             return @"REVOKED";
@@ -169,7 +173,7 @@ RCT_EXPORT_METHOD(getCredentialStateAsync:(NSString *)userID
             @"nickname": RCTNullIfNil(fullName.nickname),
         };
     }
-    
+
     return nil;
 }
 
@@ -182,7 +186,7 @@ RCT_EXPORT_METHOD(getCredentialStateAsync:(NSString *)userID
     if (data) {
         return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     }
-    
+
     return nil;
 }
 
