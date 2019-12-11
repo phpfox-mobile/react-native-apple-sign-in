@@ -31,6 +31,6 @@ export const Scope = {
 }
 
 export default {
-  request: AppleSignIn.requestAsync,
-  getCredentialState: AppleSignIn.getCredentialStateAsync,
+  request: IS_SUPPORTED ? AppleSignIn.requestAsync : null,
+  getCredentialState: IS_SUPPORTED ? AppleSignIn.getCredentialStateAsync : null,
 }
