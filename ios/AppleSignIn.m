@@ -134,7 +134,7 @@ RCT_EXPORT_METHOD(getCredentialStateAsync:(NSString *)userID
 
 - (void)authorizationController:(ASAuthorizationController *)controller
            didCompleteWithError:(NSError *)error API_AVAILABLE(ios(13.0)){
-    _promiseReject(@"ERR_APPLE_AUTHENTICATION_REQUEST", error.localizedDescription, RCTNullIfNil(error));
+    _promiseReject([NSString stringWithFormat:@"%ld", error.code], error.localizedDescription, RCTNullIfNil(error));
 }
 
 - (NSString *)exportCredentialState:(ASAuthorizationAppleIDProviderCredentialState)credentialState API_AVAILABLE(ios(13.0)){
